@@ -191,6 +191,9 @@ class TonexViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             client.tonexConnected.collect { connected ->
                 _tonexConnected.value = connected
+                if (connected) {
+                    client.requestFullSync()
+                }
             }
         }
 
