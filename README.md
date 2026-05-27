@@ -1,4 +1,4 @@
-# Tonex Controller - Android App
+# Android_APP_for_Tonex_Controller
 
 Esta es la aplicación complementaria para Android del proyecto **Tonex Controller**. 
 
@@ -9,7 +9,7 @@ Este proyecto es una adaptación para Android basada en el trabajo original de *
 * **Autor Original:** [builty](https://github.com/Builty)
 
 > [!NOTE]
-> Mi participación en este repositorio se limita exclusivamente al **diseño y desarrollo de la aplicación para Android** (`TonexController`), la cual sirve como interfaz de control para el hardware. Todos los méritos del firmware, la ingeniería inversa del protocolo USB de Tonex y la arquitectura del controlador de hardware pertenecen a **builty** y colaboradores del proyecto original.
+> Mi participación en este repositorio se limita exclusivamente al **diseño y desarrollo de la aplicación para Android** (`Android_APP_for_Tonex_Controller`), la cual sirve como interfaz de control para el hardware. Todos los méritos del firmware, la ingeniería inversa del protocolo USB de Tonex y la arquitectura del controlador de hardware pertenecen a **builty** y colaboradores del proyecto original.
 
 ---
 
