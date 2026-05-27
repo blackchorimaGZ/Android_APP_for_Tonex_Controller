@@ -30,6 +30,15 @@ android {
             )
         }
     }
+
+    applicationVariants.all {
+        outputs.forEach { output ->
+            val apkOutput = output as? com.android.build.gradle.api.ApkVariantOutput
+            if (apkOutput != null) {
+                apkOutput.outputFileName = "Android_APP_for_Tonex_Controller_v${versionName}-${buildType.name}.apk"
+            }
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
