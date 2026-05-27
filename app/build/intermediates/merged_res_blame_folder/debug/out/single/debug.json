@@ -1,0 +1,366 @@
+[
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_ibnzdblu.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/ibnzdblu.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_reverb_on_s1.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_reverb_on_s1.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_jetcity.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/jetcity.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_mod_on_chorus.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_mod_on_chorus.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_jtm.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/jtm.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_bossyel.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/bossyel.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_mod_off.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_mod_off.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_ba500.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/ba500.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_bt_disconn.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/bt_disconn.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_settings.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/settings.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_jcm.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/jcm.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_gate_off.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_gate_off.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_amp_off.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_amp_off.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_cab_off.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_cab_off.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_tick.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/tick.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_bigmuff.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/bigmuff.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_fndrhtrd.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/fndrhtrd.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_wifi_conn.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/wifi_conn.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_ibnzgrn.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/ibnzgrn.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_reverb_on_s4.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_reverb_on_s4.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_jbdumble.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/jbdumble.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_whtmdrn.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/whtmdrn.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_evh.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/evh.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_comp_on.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_comp_on.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_fuzzred.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/fuzzred.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_ratyell.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/ratyell.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_bossblk.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/bossblk.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_delay_off.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_delay_off.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_elgntblu.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/elgntblu.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_ac30.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/ac30.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_skin_5150.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/skin_5150.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_ibnzred.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/ibnzred.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_usb_fail.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/usb_fail.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mdnwhplx.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mdnwhplx.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_arrow_right.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/arrow_right.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_gate_on.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_gate_on.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_msbogdul.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/msbogdul.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_cab_on.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_cab_on.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_roljazz.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/roljazz.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_tnxared.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/tnxared.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_reverb_on_r.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_reverb_on_r.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mxrdblrd.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mxrdblrd.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_orngr120.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/orngr120.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mxrsngbk.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mxrsngbk.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_lifepdl.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/lifepdl.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_supro.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/supro.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_arrow_left.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/arrow_left.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mxrsnggn.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mxrsnggn.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_reverb_on_s3.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_reverb_on_s3.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_woodamp.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/woodamp.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mngglry.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mngglry.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_ibnzblue.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/ibnzblue.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_ampgchrm.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/ampgchrm.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_fndrtwdg.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/fndrtwdg.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mxrsngyl.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mxrsngyl.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_msamkwd.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/msamkwd.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_mod_on_tremolo.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_mod_on_tremolo.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mxrsgorg.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mxrsgorg.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_slvrface.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/slvrface.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_wifi_disconn.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/wifi_disconn.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_comp_off.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_comp_off.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_reverb_on.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_reverb_on.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_mod_on_phaser.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_mod_on_phaser.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_mod_on_rotary.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_mod_on_rotary.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_bossslvr.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/bossslvr.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_usb_ok.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/usb_ok.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.tonex.controller.app-main-48:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_delay_on_d.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_delay_on_d.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_eq.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_eq.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mxrdbbl.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mxrdbbl.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_bt_conn.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/bt_conn.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_smythbuilt.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/smythbuilt.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mdnbkplx.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mdnbkplx.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_friedman.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/friedman.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_reverb_on_s2.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_reverb_on_s2.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mxrsngwh.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mxrsngwh.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mxrsnggd.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mxrsnggd.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.tonex.controller.app-main-48:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_diezel.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/diezel.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_reverb_on_p.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_reverb_on_p.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_fndrtwin.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/fndrtwin.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_mod_on_flanger.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_mod_on_flanger.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_reverb_off.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_reverb_off.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_klongld.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/klongld.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_amp_on.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_amp_on.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_effect_icon_delay_on_t.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/effect_icon_delay_on_t.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_tnxablk.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/tnxablk.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_mesamkv.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/mesamkv.png"
+    },
+    {
+        "merged": "com.tonex.controller.app-merged_res-46:/drawable_fuzzslvr.png.flat",
+        "source": "com.tonex.controller.app-main-48:/drawable/fuzzslvr.png"
+    }
+]
