@@ -2061,9 +2061,9 @@ fun GateSliders(state: TonexState, viewModel: TonexViewModel) {
     val lang = viewModel.appLanguage
     Column(modifier = Modifier.fillMaxWidth()) {
         TonexSwitchRow(LanguageManager.get(StringKey.NOISE_GATE_POWER, lang), state.gate.enabled, { viewModel.setCc(MidiCcMap.GATE_POWER, if (it) 127 else 0) }, color)
-        TonexSlider(LanguageManager.get(StringKey.THRESHOLD, lang), state.gate.threshold, onValueChange = { viewModel.setCc(MidiCcMap.GATE_THRESHOLD, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.RELEASE, lang), state.gate.release, onValueChange = { viewModel.setCc(MidiCcMap.GATE_RELEASE, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.DEPTH, lang), state.gate.depth, onValueChange = { viewModel.setCc(MidiCcMap.GATE_DEPTH, it) }, color = color)
+        TonexSlider(LanguageManager.get(StringKey.THRESHOLD, lang), state.gate.threshold, onValueChange = { viewModel.setCc(MidiCcMap.GATE_THRESHOLD, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.GATE_THRESHOLD, it) })
+        TonexSlider(LanguageManager.get(StringKey.RELEASE, lang), state.gate.release, onValueChange = { viewModel.setCc(MidiCcMap.GATE_RELEASE, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.GATE_RELEASE, it) })
+        TonexSlider(LanguageManager.get(StringKey.DEPTH, lang), state.gate.depth, onValueChange = { viewModel.setCc(MidiCcMap.GATE_DEPTH, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.GATE_DEPTH, it) })
         
         Row(
             modifier = Modifier
@@ -2100,9 +2100,9 @@ fun CompressorSliders(state: TonexState, viewModel: TonexViewModel) {
     val lang = viewModel.appLanguage
     Column(modifier = Modifier.fillMaxWidth()) {
         TonexSwitchRow(LanguageManager.get(StringKey.COMPRESSOR_POWER, lang), state.compressor.enabled, { viewModel.setCc(MidiCcMap.COMP_POWER, if (it) 127 else 0) }, color)
-        TonexSlider(LanguageManager.get(StringKey.THRESHOLD, lang), state.compressor.threshold, onValueChange = { viewModel.setCc(MidiCcMap.COMP_THRESHOLD, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.GAIN, lang), state.compressor.gain, onValueChange = { viewModel.setCc(MidiCcMap.COMP_GAIN, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.ATTACK, lang), state.compressor.attack, onValueChange = { viewModel.setCc(MidiCcMap.COMP_ATTACK, it) }, color = color)
+        TonexSlider(LanguageManager.get(StringKey.THRESHOLD, lang), state.compressor.threshold, onValueChange = { viewModel.setCc(MidiCcMap.COMP_THRESHOLD, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.COMP_THRESHOLD, it) })
+        TonexSlider(LanguageManager.get(StringKey.GAIN, lang), state.compressor.gain, onValueChange = { viewModel.setCc(MidiCcMap.COMP_GAIN, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.COMP_GAIN, it) })
+        TonexSlider(LanguageManager.get(StringKey.ATTACK, lang), state.compressor.attack, onValueChange = { viewModel.setCc(MidiCcMap.COMP_ATTACK, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.COMP_ATTACK, it) })
 
         Row(
             modifier = Modifier
@@ -2138,11 +2138,11 @@ fun AmpSliders(state: TonexState, viewModel: TonexViewModel) {
     val color = BlockType.AMP.color
     val lang = viewModel.appLanguage
     Column(modifier = Modifier.fillMaxWidth()) {
-        TonexSlider(LanguageManager.get(StringKey.GAIN, lang), state.amp.gain, onValueChange = { viewModel.setCc(MidiCcMap.AMP_GAIN, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.VOLUME, lang), state.amp.volume, onValueChange = { viewModel.setCc(MidiCcMap.AMP_VOLUME, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.PRESENCE, lang), state.amp.presence, onValueChange = { viewModel.setCc(MidiCcMap.PRESENCE, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.DEPTH, lang), state.amp.depth, onValueChange = { viewModel.setCc(MidiCcMap.DEPTH, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.MIX, lang), state.amp.mix, onValueChange = { viewModel.setCc(MidiCcMap.AMP_MIX, it) }, color = color)
+        TonexSlider(LanguageManager.get(StringKey.GAIN, lang), state.amp.gain, onValueChange = { viewModel.setCc(MidiCcMap.AMP_GAIN, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.AMP_GAIN, it) })
+        TonexSlider(LanguageManager.get(StringKey.VOLUME, lang), state.amp.volume, onValueChange = { viewModel.setCc(MidiCcMap.AMP_VOLUME, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.AMP_VOLUME, it) })
+        TonexSlider(LanguageManager.get(StringKey.PRESENCE, lang), state.amp.presence, onValueChange = { viewModel.setCc(MidiCcMap.PRESENCE, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.PRESENCE, it) })
+        TonexSlider(LanguageManager.get(StringKey.DEPTH, lang), state.amp.depth, onValueChange = { viewModel.setCc(MidiCcMap.DEPTH, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.DEPTH, it) })
+        TonexSlider(LanguageManager.get(StringKey.MIX, lang), state.amp.mix, onValueChange = { viewModel.setCc(MidiCcMap.AMP_MIX, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.AMP_MIX, it) })
 
         Spacer(modifier = Modifier.height(10.dp))
         Text(
@@ -2248,13 +2248,13 @@ fun EqSliders(state: TonexState, viewModel: TonexViewModel) {
     val color = BlockType.EQ.color
     val lang = viewModel.appLanguage
     Column(modifier = Modifier.fillMaxWidth()) {
-        TonexSlider(LanguageManager.get(StringKey.BASS, lang), state.eq.bass, onValueChange = { viewModel.setCc(MidiCcMap.BASS_EQ, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.BASS_HZ, lang), state.eq.bassHz, onValueChange = { viewModel.setCc(MidiCcMap.BASS_HZ, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.MID, lang), state.eq.mid, onValueChange = { viewModel.setCc(MidiCcMap.MID_EQ, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.MID_Q, lang), state.eq.midQ, onValueChange = { viewModel.setCc(MidiCcMap.MID_Q, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.MID_HZ, lang), state.eq.midHz, onValueChange = { viewModel.setCc(MidiCcMap.MID_HZ, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.TREBLE, lang), state.eq.treble, onValueChange = { viewModel.setCc(MidiCcMap.TREBLE_EQ, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.TREB_HZ, lang), state.eq.trebleHz, onValueChange = { viewModel.setCc(MidiCcMap.TREBLE_HZ, it) }, color = color)
+        TonexSlider(LanguageManager.get(StringKey.BASS, lang), state.eq.bass, onValueChange = { viewModel.setCc(MidiCcMap.BASS_EQ, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.BASS_EQ, it) })
+        TonexSlider(LanguageManager.get(StringKey.BASS_HZ, lang), state.eq.bassHz, onValueChange = { viewModel.setCc(MidiCcMap.BASS_HZ, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.BASS_HZ, it) })
+        TonexSlider(LanguageManager.get(StringKey.MID, lang), state.eq.mid, onValueChange = { viewModel.setCc(MidiCcMap.MID_EQ, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.MID_EQ, it) })
+        TonexSlider(LanguageManager.get(StringKey.MID_Q, lang), state.eq.midQ, onValueChange = { viewModel.setCc(MidiCcMap.MID_Q, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.MID_Q, it) })
+        TonexSlider(LanguageManager.get(StringKey.MID_HZ, lang), state.eq.midHz, onValueChange = { viewModel.setCc(MidiCcMap.MID_HZ, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.MID_HZ, it) })
+        TonexSlider(LanguageManager.get(StringKey.TREBLE, lang), state.eq.treble, onValueChange = { viewModel.setCc(MidiCcMap.TREBLE_EQ, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.TREBLE_EQ, it) })
+        TonexSlider(LanguageManager.get(StringKey.TREB_HZ, lang), state.eq.trebleHz, onValueChange = { viewModel.setCc(MidiCcMap.TREBLE_HZ, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.TREBLE_HZ, it) })
 
         Row(
             modifier = Modifier
@@ -2292,9 +2292,9 @@ fun ModulationSliders(state: TonexState, viewModel: TonexViewModel) {
     Column(modifier = Modifier.fillMaxWidth()) {
         TonexSwitchRow(LanguageManager.get(StringKey.MODULATION_POWER, lang), state.modulation.enabled, { viewModel.setCc(MidiCcMap.MOD_POWER, if (it) 127 else 0) }, color)
         
-        TonexSlider(LanguageManager.get(StringKey.RATE, lang), state.modulation.param0, onValueChange = { viewModel.setCc(35, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.DEPTH, lang), state.modulation.param1, onValueChange = { viewModel.setCc(36, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.LEVEL, lang), state.modulation.param2, onValueChange = { viewModel.setCc(37, it) }, color = color)
+        TonexSlider(LanguageManager.get(StringKey.RATE, lang), state.modulation.param0, onValueChange = { viewModel.setCc(35, it) }, color = color, displayFormatter = { formatParamValue(35, it, activeModType = state.modulation.type) })
+        TonexSlider(LanguageManager.get(StringKey.DEPTH, lang), state.modulation.param1, onValueChange = { viewModel.setCc(36, it) }, color = color, displayFormatter = { formatParamValue(36, it, activeModType = state.modulation.type) })
+        TonexSlider(LanguageManager.get(StringKey.LEVEL, lang), state.modulation.param2, onValueChange = { viewModel.setCc(37, it) }, color = color, displayFormatter = { formatParamValue(37, it, activeModType = state.modulation.type) })
 
         Spacer(modifier = Modifier.height(10.dp))
         Text(LanguageManager.get(StringKey.MODULATION_TYPE, lang), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.LightGray)
@@ -2394,19 +2394,22 @@ fun DelaySliders(
             LanguageManager.get(StringKey.TIME, lang),
             state.delay.time,
             onValueChange = { viewModel.setCc(if (isTape) MidiCcMap.TAPE_DELAY_TIME else MidiCcMap.DIGITAL_DELAY_TIME, it) },
-            color = color
+            color = color,
+            displayFormatter = { formatParamValue(if (isTape) MidiCcMap.TAPE_DELAY_TIME else MidiCcMap.DIGITAL_DELAY_TIME, it, isTapeDelay = isTape) }
         )
         TonexSlider(
             LanguageManager.get(StringKey.FEEDBACK, lang),
             state.delay.feedback,
             onValueChange = { viewModel.setCc(if (isTape) MidiCcMap.TAPE_DELAY_FEEDBACK else MidiCcMap.DIGITAL_DELAY_FEEDBACK, it) },
-            color = color
+            color = color,
+            displayFormatter = { formatParamValue(if (isTape) MidiCcMap.TAPE_DELAY_FEEDBACK else MidiCcMap.DIGITAL_DELAY_FEEDBACK, it, isTapeDelay = isTape) }
         )
         TonexSlider(
             LanguageManager.get(StringKey.MIX, lang),
             state.delay.mix,
             onValueChange = { viewModel.setCc(if (isTape) MidiCcMap.TAPE_DELAY_MIX else MidiCcMap.DIGITAL_DELAY_MIX, it) },
-            color = color
+            color = color,
+            displayFormatter = { formatParamValue(if (isTape) MidiCcMap.TAPE_DELAY_MIX else MidiCcMap.DIGITAL_DELAY_MIX, it, isTapeDelay = isTape) }
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -2444,10 +2447,10 @@ fun ReverbSliders(state: TonexState, viewModel: TonexViewModel) {
     Column(modifier = Modifier.fillMaxWidth()) {
         TonexSwitchRow(LanguageManager.get(StringKey.REVERB_POWER, lang), state.reverb.enabled, { viewModel.setCc(MidiCcMap.REVERB_POWER, if (it) 127 else 0) }, color)
         
-        TonexSlider(LanguageManager.get(StringKey.TIME, lang), state.reverb.time, onValueChange = { viewModel.setCc(71, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.PREDELAY, lang), state.reverb.predelay, onValueChange = { viewModel.setCc(72, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.COLOR, lang), state.reverb.color, onValueChange = { viewModel.setCc(73, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.MIX, lang), state.reverb.mix, onValueChange = { viewModel.setCc(74, it) }, color = color)
+        TonexSlider(LanguageManager.get(StringKey.TIME, lang), state.reverb.time, onValueChange = { viewModel.setCc(71, it) }, color = color, displayFormatter = { formatParamValue(71, it, activeReverbType = state.reverb.type) })
+        TonexSlider(LanguageManager.get(StringKey.PREDELAY, lang), state.reverb.predelay, onValueChange = { viewModel.setCc(72, it) }, color = color, displayFormatter = { formatParamValue(72, it, activeReverbType = state.reverb.type) })
+        TonexSlider(LanguageManager.get(StringKey.COLOR, lang), state.reverb.color, onValueChange = { viewModel.setCc(73, it) }, color = color, displayFormatter = { formatParamValue(73, it, activeReverbType = state.reverb.type) })
+        TonexSlider(LanguageManager.get(StringKey.MIX, lang), state.reverb.mix, onValueChange = { viewModel.setCc(74, it) }, color = color, displayFormatter = { formatParamValue(74, it, activeReverbType = state.reverb.type) })
 
         Spacer(modifier = Modifier.height(10.dp))
         Text(LanguageManager.get(StringKey.REVERB_TYPE, lang), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.LightGray)
@@ -2476,16 +2479,15 @@ fun ReverbSliders(state: TonexState, viewModel: TonexViewModel) {
 fun GlobalSliders(state: TonexState, viewModel: TonexViewModel) {
     val color = BlockType.GLOBALS.color
     val lang = viewModel.appLanguage
-    val scaledBpm = (40 + (state.globals.bpm * (240 - 40) / 127))
     Column(modifier = Modifier.fillMaxWidth()) {
-        TonexSlider(LanguageManager.get(StringKey.GLOBAL_VOL, lang), state.globals.volume, onValueChange = { viewModel.setCc(MidiCcMap.GLOBAL_VOLUME, it) }, color = color)
-        TonexSlider(LanguageManager.get(StringKey.INPUT_TRIM, lang), state.globals.inputTrim, onValueChange = { viewModel.setCc(MidiCcMap.INPUT_TRIM, it) }, color = color)
+        TonexSlider(LanguageManager.get(StringKey.GLOBAL_VOL, lang), state.globals.volume, onValueChange = { viewModel.setCc(MidiCcMap.GLOBAL_VOLUME, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.GLOBAL_VOLUME, it) })
+        TonexSlider(LanguageManager.get(StringKey.INPUT_TRIM, lang), state.globals.inputTrim, onValueChange = { viewModel.setCc(MidiCcMap.INPUT_TRIM, it) }, color = color, displayFormatter = { formatParamValue(MidiCcMap.INPUT_TRIM, it) })
         TonexSlider(
             "BPM",
             state.globals.bpm,
             onValueChange = { viewModel.setCc(MidiCcMap.BPM, it) },
             color = color,
-            displayFormatter = { scaledBpm.toString() }
+            displayFormatter = { formatParamValue(MidiCcMap.BPM, it) }
         )
         
         Spacer(modifier = Modifier.height(10.dp))
@@ -2563,6 +2565,72 @@ fun getSkinName(index: Int): String {
         48 -> "MXR Single Yellow"
         49 -> "Rat Yellow"
         else -> "Unknown Skin"
+    }
+}
+
+fun formatParamValue(
+    cc: Int,
+    value: Int,
+    activeReverbType: ReverbType = ReverbType.ROOM,
+    activeModType: ModType = ModType.CHORUS,
+    isTapeDelay: Boolean = false
+): String {
+    val paramIndex = TonexParamMapper.ccToParamIndex(cc, activeReverbType, activeModType, isTapeDelay)
+    if (paramIndex == -1) return value.toString()
+
+    val (min, max, suffix) = when (paramIndex) {
+        // Gate
+        2 -> Triple(-100.0, 0.0, " dB")      // Threshold
+        3 -> Triple(5.0, 500.0, " ms")       // Release
+        4 -> Triple(-100.0, -20.0, " dB")    // Depth
+
+        // Comp
+        7 -> Triple(-40.0, 0.0, " dB")       // Threshold
+        8 -> Triple(-30.0, 10.0, " dB")      // Gain
+        9 -> Triple(1.0, 51.0, " ms")        // Attack
+
+        // EQ
+        12 -> Triple(75.0, 600.0, " Hz")     // Bass Freq
+        14 -> Triple(0.2, 3.0, "")           // Mid Q
+        15 -> Triple(150.0, 5000.0, " Hz")   // Mid Freq
+        17 -> Triple(1000.0, 4000.0, " Hz")  // Treble Freq
+
+        // Amp
+        22 -> Triple(0.0, 100.0, " %")       // Amp Mix
+
+        // Reverb
+        40, 44, 48, 52, 56, 60 -> Triple(0.0, 500.0, " ms") // Predelay
+        41, 45, 49, 53, 57, 61 -> Triple(-10.0, 10.0, "")   // Color
+        42, 46, 50, 54, 58, 62 -> Triple(0.0, 100.0, " %")  // Mix
+
+        // Modulation
+        68, 73, 79, 84 -> Triple(0.1, 10.0, " Hz") // Modulation Rate
+        90 -> Triple(0.0, 400.0, "")               // Rotary Speed (Rate)
+        69, 74, 80, 85 -> Triple(0.0, 100.0, " %") // Modulation Depth
+        91 -> Triple(0.0, 300.0, "")               // Rotary Radius (Depth)
+        70, 75, 81, 86, 92 -> Triple(0.0, 10.0, "") // Modulation Level
+
+        // Delay
+        99, 105 -> Triple(0.0, 1000.0, " ms") // Delay Time
+        100, 106 -> Triple(0.0, 100.0, " %")  // Delay Feedback
+        102, 108 -> Triple(0.0, 100.0, " %")  // Delay Mix
+
+        // Globals
+        110 -> Triple(40.0, 240.0, " BPM")    // BPM
+        111 -> Triple(-15.0, 15.0, " dB")     // Input Trim
+        116 -> Triple(-40.0, 3.0, " dB")      // Master Volume
+        114 -> Triple(415.0, 465.0, " Hz")     // Tuning Reference
+
+        // Default 0-10 knobs
+        else -> Triple(0.0, 10.0, "")
+    }
+
+    val mappedFloat = min + (value.toFloat() / 127.0) * (max - min)
+    
+    return if (mappedFloat % 1.0 == 0.0) {
+        "${mappedFloat.toInt()}$suffix"
+    } else {
+        String.format(java.util.Locale.US, "%.1f", mappedFloat) + suffix
     }
 }
 
