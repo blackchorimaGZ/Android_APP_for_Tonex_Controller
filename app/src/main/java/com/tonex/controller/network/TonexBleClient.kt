@@ -519,9 +519,15 @@ class TonexBleClient {
     private fun startStatusPolling() {
         stopStatusPolling()
         statusPollingJob = scope.launch {
+            var counter = 0
             while (isActive && isConnected()) {
-                sendRaw(JSONObject().apply { put("CMD", "GETMODELLERDATA") }.toString())
-                delay(3000)
+                sendRaw(JSONObject().apply { put("CMD", "GETCHANGES") }.toString())
+                counter++
+                if (counter >= 3) {
+                    sendRaw(JSONObject().apply { put("CMD", "GETMODELLERDATA") }.toString())
+                    counter = 0
+                }
+                delay(2000)
             }
         }
     }
