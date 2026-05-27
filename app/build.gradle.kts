@@ -9,11 +9,11 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.tonex.controller"
+        applicationId = "com.tonex.controller.bt"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -24,6 +24,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -35,7 +36,7 @@ android {
         outputs.forEach { output ->
             val apkOutput = output as? com.android.build.gradle.api.ApkVariantOutput
             if (apkOutput != null) {
-                apkOutput.outputFileName = "Android_APP_for_Tonex_Controller_v${versionName}-${buildType.name}.apk"
+                apkOutput.outputFileName = "Tonex Controller APP BT.apk"
             }
         }
     }

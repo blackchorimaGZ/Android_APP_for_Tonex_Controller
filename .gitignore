@@ -6,6 +6,7 @@
 /.idea/modules.xml
 /.idea/deploymentTargetSelector.xml
 /build
+/app/build
 .DS_Store
 /captures
 .externalNativeBuild

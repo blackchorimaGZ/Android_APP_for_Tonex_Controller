@@ -51,6 +51,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.AndroidViewModel
 import android.app.Application
 import android.content.Context
+import android.Manifest
+import android.os.Build
+import android.util.Log
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.lazy.LazyRow
@@ -61,7 +65,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import com.tonex.controller.data.*
-import com.tonex.controller.network.TonexWebSocketClient
+import com.tonex.controller.network.TonexBleClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -78,6 +82,26 @@ import androidx.compose.ui.graphics.lerp
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Request BLE and Location Permissions at startup
+        val permissions = mutableListOf<String>()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.BLUETOOTH_SCAN)
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+        } else {
+            permissions.add(Manifest.permission.BLUETOOTH)
+            permissions.add(Manifest.permission.BLUETOOTH_ADMIN)
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        
+        val requestPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { results ->
+            Log.d("MainActivity", "Permissions results: $results")
+        }
+        
+        requestPermissionLauncher.launch(permissions.toTypedArray())
+
         setContent {
             TonexTheme {
                 Surface(
@@ -112,17 +136,20 @@ fun TonexTheme(content: @Composable () -> Unit) {
 
 // ── ViewModel ───────────────────────────────────────────────────────────────
 class TonexViewModel(application: Application) : AndroidViewModel(application) {
-    private val client = TonexWebSocketClient()
+    private val client = TonexBleClient()
     private val context = application.applicationContext
     private val prefs = context.getSharedPreferences("tonex_controller_prefs", Context.MODE_PRIVATE)
 
-    private val _connectionState = MutableStateFlow(TonexWebSocketClient.ConnectionState.DISCONNECTED)
+    private val _connectionState = MutableStateFlow(TonexBleClient.ConnectionState.DISCONNECTED)
     val connectionState = _connectionState.asStateFlow()
+
+    private val _tonexConnected = MutableStateFlow(false)
+    val tonexConnected = _tonexConnected.asStateFlow()
 
     private val _tonexState = MutableStateFlow(TonexState())
     val tonexState: StateFlow<TonexState> = _tonexState.asStateFlow()
 
-    var hostIp by mutableStateOf("192.168.4.1")
+    var hostIp by mutableStateOf("TnxBT")
         private set
 
     var appLanguage by mutableStateOf(AppLanguage.EN)
@@ -147,8 +174,8 @@ class TonexViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
-        // Load saved IP (defaults to 192.168.4.1)
-        hostIp = prefs.getString("saved_host_ip", "192.168.4.1") ?: "192.168.4.1"
+        // Load saved BLE device name (defaults to TnxBT)
+        hostIp = prefs.getString("saved_host_ip", "TnxBT") ?: "TnxBT"
         val savedLang = prefs.getString("saved_app_lang", "EN") ?: "EN"
         appLanguage = try { AppLanguage.valueOf(savedLang) } catch(e: Exception) { AppLanguage.EN }
 
@@ -156,7 +183,14 @@ class TonexViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             client.connectionState.collect { state ->
                 _connectionState.value = state
-                _tonexState.value = _tonexState.value.copy(connected = state == TonexWebSocketClient.ConnectionState.CONNECTED)
+                _tonexState.value = _tonexState.value.copy(connected = state == TonexBleClient.ConnectionState.CONNECTED)
+            }
+        }
+
+        // Collect Tonex pedal connection changes
+        viewModelScope.launch {
+            client.tonexConnected.collect { connected ->
+                _tonexConnected.value = connected
             }
         }
 
@@ -247,13 +281,11 @@ class TonexViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun connect() {
-        // Sanitize: replace spaces with dots, trim whitespace
-        val sanitized = hostIp.trim().replace(" ", ".").replace("..", ".")
-        val ipToConnect = sanitized.ifBlank { "192.168.4.1" }
-        hostIp = ipToConnect
+        val sanitized = hostIp.trim()
+        hostIp = sanitized
         // Save to prefs
         prefs.edit().putString("saved_host_ip", hostIp).apply()
-        client.connect(hostIp)
+        client.connect(context, hostIp)
     }
 
     fun setLanguage(lang: AppLanguage) {
@@ -289,14 +321,14 @@ class TonexViewModel(application: Application) : AndroidViewModel(application) {
                     .putInt("preset_skin_$i", sequentialSkin)
                     .putBoolean("preset_skin_customized_$i", false)
                     .apply()
-                if (client.connectionState.value == TonexWebSocketClient.ConnectionState.CONNECTED) {
+                if (client.connectionState.value == TonexBleClient.ConnectionState.CONNECTED) {
                     client.sendPresetChange(i)
                     kotlinx.coroutines.delay(120)
                     client.sendSkinChange(sequentialSkin)
                     kotlinx.coroutines.delay(120)
                 }
             }
-            if (client.connectionState.value == TonexWebSocketClient.ConnectionState.CONNECTED) {
+            if (client.connectionState.value == TonexBleClient.ConnectionState.CONNECTED) {
                 client.sendPresetChange(0)
             }
         }
@@ -532,6 +564,18 @@ fun TonexKnob(
 fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
     val state by viewModel.tonexState.collectAsState()
     val connState by viewModel.connectionState.collectAsState()
+    val tonexConnected by viewModel.tonexConnected.collectAsState()
+
+    var showPresetsAfterSync by remember { mutableStateOf(false) }
+
+    LaunchedEffect(connState, tonexConnected) {
+        if (connState == TonexBleClient.ConnectionState.CONNECTED && tonexConnected) {
+            kotlinx.coroutines.delay(1000)
+            showPresetsAfterSync = true
+        } else {
+            showPresetsAfterSync = false
+        }
+    }
 
     var currentScreen by remember { mutableStateOf(Screen.Splash) }
 
@@ -541,215 +585,516 @@ fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
         }
         Screen.Main -> {
             var selectedSettingsBlock by remember { mutableStateOf<BlockType>(BlockType.AMP) }
-    var isInterfaceLocked by remember { mutableStateOf(false) }
-    var lastTapTimes by remember { mutableStateOf(listOf<Long>()) }
-    val onTapTempo = {
-        val now = System.currentTimeMillis()
-        val updatedTaps = lastTapTimes.filter { now - it < 2000 } + now
-        if (updatedTaps.size >= 2) {
-            val intervals = updatedTaps.zipWithNext { a, b -> b - a }
-            val avgInterval = intervals.average()
-            val tappedBpm = (60000 / avgInterval).toInt()
-            val clampedBpm = tappedBpm.coerceIn(40, 240)
-            val ccVal = ((clampedBpm - 40) * 127 / (240 - 40)).coerceIn(0, 127)
-            viewModel.setCc(MidiCcMap.BPM, ccVal)
-        }
-        lastTapTimes = updatedTaps
-    }
-    var showPresetDialog by remember { mutableStateOf(false) }
-    var presetSearchQuery by remember { mutableStateOf("") }
-    var isEditorOpen by remember { mutableStateOf(false) }
-    var showInfoDialog by remember { mutableStateOf(false) }
-
-    val isConnected = connState == TonexWebSocketClient.ConnectionState.CONNECTED
-
-    // Pager for preset carousel matching the Waveshare 4.3B screen
-    val pagerState = rememberPagerState(
-        initialPage = state.preset,
-        pageCount = { 20 }
-    )
-
-    var isUpdatingFromNetwork by remember { mutableStateOf(false) }
-
-    // Sync Pager from ESP32 State
-    LaunchedEffect(state.preset) {
-        if (state.preset in 0..19 && pagerState.currentPage != state.preset) {
-            isUpdatingFromNetwork = true
-            try {
-                pagerState.scrollToPage(state.preset)
-            } finally {
-                kotlinx.coroutines.delay(350)
-                isUpdatingFromNetwork = false
+            var isInterfaceLocked by remember { mutableStateOf(false) }
+            var lastTapTimes by remember { mutableStateOf(listOf<Long>()) }
+            val onTapTempo = {
+                val now = System.currentTimeMillis()
+                val updatedTaps = lastTapTimes.filter { now - it < 2000 } + now
+                if (updatedTaps.size >= 2) {
+                    val intervals = updatedTaps.zipWithNext { a, b -> b - a }
+                    val avgInterval = intervals.average()
+                    val tappedBpm = (60000 / avgInterval).toInt()
+                    val clampedBpm = tappedBpm.coerceIn(40, 240)
+                    val ccVal = ((clampedBpm - 40) * 127 / (240 - 40)).coerceIn(0, 127)
+                    viewModel.setCc(MidiCcMap.BPM, ccVal)
+                }
+                lastTapTimes = updatedTaps
             }
-        }
-    }
-// Sync Pager swipes to ESP32 Preset Changes (with debounce)
-    LaunchedEffect(pagerState.currentPage) {
-        if (!isUpdatingFromNetwork && state.preset != pagerState.currentPage && isConnected) {
-            kotlinx.coroutines.delay(400) // Debounce rapid swipes
-            viewModel.setPreset(pagerState.currentPage)
-        }
-    }
-    Box(modifier = Modifier.fillMaxSize()) {
-        val keyboardController = LocalSoftwareKeyboardController.current
-        if (!isConnected) {
-            val scrollState = rememberScrollState()
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF0F0F0F))
-                    .verticalScroll(scrollState)
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .wrapContentHeight(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Color(0xFF333333))
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = "Logo",
-                            tint = Color(0xFFD1A60C),
-                            modifier = Modifier.size(56.dp)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "TONEX MOBILE",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFD1A60C)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = LanguageManager.get(StringKey.CONNECT_HELP, viewModel.appLanguage),
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        
-                        OutlinedTextField(
-                            value = viewModel.hostIp,
-                            onValueChange = { viewModel.updateHost(it) },
-                            label = { Text(LanguageManager.get(StringKey.IP_ADDRESS, viewModel.appLanguage), fontSize = 10.sp) },
-                            placeholder = { Text("192.168.4.1", color = Color.Gray) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Uri,
-                                imeAction = ImeAction.Done
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    keyboardController?.hide()
-                                    viewModel.connect()
-                                }
-                            ),
-                            modifier = Modifier.fillMaxWidth(),
-                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, color = Color.White),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFFD1A60C),
-                                unfocusedBorderColor = Color.Gray,
-                                focusedLabelColor = Color(0xFFD1A60C),
-                                unfocusedLabelColor = Color.Gray
-                            )
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
+            var showPresetDialog by remember { mutableStateOf(false) }
+            var presetSearchQuery by remember { mutableStateOf("") }
+            var isEditorOpen by remember { mutableStateOf(false) }
+            var showInfoDialog by remember { mutableStateOf(false) }
 
-                        // Connection State indicator
-                        val stateColor = when (connState) {
-                            TonexWebSocketClient.ConnectionState.CONNECTED -> Color(0xFF2E7D32)
-                            TonexWebSocketClient.ConnectionState.CONNECTING -> Color(0xFFD1A60C)
-                            TonexWebSocketClient.ConnectionState.RECONNECTING -> Color(0xFFFF9800)
-                            TonexWebSocketClient.ConnectionState.DISCONNECTED -> Color(0xFFC33030)
-                        }
-                        val stateText = when (connState) {
-                            TonexWebSocketClient.ConnectionState.CONNECTED -> LanguageManager.get(StringKey.CONNECTED, viewModel.appLanguage)
-                            TonexWebSocketClient.ConnectionState.CONNECTING -> LanguageManager.get(StringKey.CONNECTING, viewModel.appLanguage)
-                            TonexWebSocketClient.ConnectionState.RECONNECTING -> LanguageManager.get(StringKey.RECONNECTING, viewModel.appLanguage)
-                            TonexWebSocketClient.ConnectionState.DISCONNECTED -> LanguageManager.get(StringKey.DISCONNECTED, viewModel.appLanguage)
-                        }
-                        
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(stateColor.copy(alpha = 0.15f))
-                                .border(1.dp, stateColor, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(androidx.compose.foundation.shape.CircleShape)
-                                    .background(stateColor)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = stateText,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = stateColor
-                            )
-                        }
+            val isBleConnected = connState == TonexBleClient.ConnectionState.CONNECTED
 
-                        Spacer(modifier = Modifier.height(20.dp))
-                        
-                        Button(
-                            onClick = {
-                                keyboardController?.hide()
-                                viewModel.connect()
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFD1A60C),
-                                contentColor = Color.Black
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(LanguageManager.get(StringKey.CONNECT, viewModel.appLanguage), fontWeight = FontWeight.Bold)
-                        }
+            val scaledBpm = (40 + (state.globals.bpm * (240 - 40) / 127))
+            val beatDurationMs = (60000 / scaledBpm).toLong()
+            val infiniteTransition = rememberInfiniteTransition(label = "beat")
+            val beatProgress by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = (beatDurationMs / 2).toInt().coerceIn(100, 1000),
+                        easing = LinearEasing
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "beatProgress"
+            )
+            val beatPulseColor = lerp(Color(0xFF1A1A1E), Color(0xFF5A1A2A), beatProgress)
+            val beatBorderColor = lerp(Color(0xFF2D2D35), Color(0xFFFF2E93), beatProgress)
 
-                        Spacer(modifier = Modifier.height(20.dp))
+            // Pager for preset carousel matching the Waveshare 4.3B screen
+            val pagerState = rememberPagerState(
+                initialPage = state.preset,
+                pageCount = { 20 }
+            )
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = if (viewModel.appLanguage == AppLanguage.EN) "Language / Idioma" else "Idioma / Language",
-                                fontSize = 11.sp,
-                                color = Color.LightGray,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                LanguageFlagButton(
-                                    lang = AppLanguage.EN,
-                                    isSelected = viewModel.appLanguage == AppLanguage.EN,
-                                    onClick = { viewModel.setLanguage(AppLanguage.EN) }
-                                )
-                                LanguageFlagButton(
-                                    lang = AppLanguage.ES,
-                                    isSelected = viewModel.appLanguage == AppLanguage.ES,
-                                    onClick = { viewModel.setLanguage(AppLanguage.ES) }
-                                )
-                            }
-                        }
+            var isUpdatingFromNetwork by remember { mutableStateOf(false) }
+
+            // Sync Pager from ESP32 State
+            LaunchedEffect(state.preset) {
+                if (state.preset in 0..19 && pagerState.currentPage != state.preset) {
+                    isUpdatingFromNetwork = true
+                    try {
+                        pagerState.scrollToPage(state.preset)
+                    } finally {
+                        kotlinx.coroutines.delay(350)
+                        isUpdatingFromNetwork = false
                     }
                 }
             }
-        } else if (!isEditorOpen) {
+            // Sync Pager swipes to ESP32 Preset Changes (with debounce)
+            LaunchedEffect(pagerState.currentPage) {
+                if (!isUpdatingFromNetwork && state.preset != pagerState.currentPage && isBleConnected) {
+                    kotlinx.coroutines.delay(400) // Debounce rapid swipes
+                    viewModel.setPreset(pagerState.currentPage)
+                }
+            }
+            Box(modifier = Modifier.fillMaxSize()) {
+                val keyboardController = LocalSoftwareKeyboardController.current
+                if (!showPresetsAfterSync) {
+                    val configuration = LocalConfiguration.current
+                    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+                    val scrollState = rememberScrollState()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFF0F0F0F))
+                            .verticalScroll(scrollState)
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth(if (isLandscape) 0.95f else 0.9f)
+                                .wrapContentHeight(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, Color(0xFF333333))
+                        ) {
+                            if (isLandscape) {
+                                // Landscape horizontal split layout
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Left Column: Logo & Status
+                                    Column(
+                                        modifier = Modifier.weight(1.1f),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Tune,
+                                                contentDescription = "Logo",
+                                                tint = Color(0xFFD1A60C),
+                                                modifier = Modifier.size(28.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "TONEX MOBILE",
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFFD1A60C)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        // Status indicators
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(Color(0xFF121212), RoundedCornerShape(8.dp))
+                                                .border(1.dp, Color(0xFF2C2C2C), RoundedCornerShape(8.dp))
+                                                .padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            val bleText = if (viewModel.appLanguage == AppLanguage.ES) "Conexión controlador: " else "Controller connection: "
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(bleText, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                                Text(
+                                                    text = if (isBleConnected) "SÍ" else "NO",
+                                                    color = if (isBleConnected) Color(0xFF39FF14) else Color(0xFFFF3B30),
+                                                    fontSize = 16.sp,
+                                                    fontWeight = FontWeight.ExtraBold
+                                                )
+                                            }
+
+                                            val tonexText = if (viewModel.appLanguage == AppLanguage.ES) "Conexión Tonex: " else "Tonex connection: "
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(tonexText, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                                Text(
+                                                    text = if (tonexConnected) "SÍ" else "NO",
+                                                    color = if (tonexConnected) Color(0xFF39FF14) else Color(0xFFFF3B30),
+                                                    fontSize = 16.sp,
+                                                    fontWeight = FontWeight.ExtraBold
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    // Right Column: Controls & Actions
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        if (!isBleConnected) {
+                                            OutlinedTextField(
+                                                value = viewModel.hostIp,
+                                                onValueChange = { viewModel.updateHost(it) },
+                                                label = { Text(LanguageManager.get(StringKey.IP_ADDRESS, viewModel.appLanguage), fontSize = 9.sp) },
+                                                placeholder = { Text("TnxBT", color = Color.Gray) },
+                                                singleLine = true,
+                                                keyboardOptions = KeyboardOptions(
+                                                    keyboardType = KeyboardType.Text,
+                                                    imeAction = ImeAction.Done
+                                                ),
+                                                keyboardActions = KeyboardActions(onDone = {
+                                                    keyboardController?.hide()
+                                                    viewModel.connect()
+                                                }),
+                                                modifier = Modifier.fillMaxWidth(),
+                                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = Color.White),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    focusedBorderColor = Color(0xFFD1A60C),
+                                                    unfocusedBorderColor = Color.Gray,
+                                                    focusedLabelColor = Color(0xFFD1A60C),
+                                                    unfocusedLabelColor = Color.Gray
+                                                )
+                                            )
+                                            Spacer(modifier = Modifier.height(8.dp))
+
+                                            val stateColor = when (connState) {
+                                                TonexBleClient.ConnectionState.CONNECTED -> Color(0xFF2E7D32)
+                                                TonexBleClient.ConnectionState.CONNECTING -> Color(0xFFD1A60C)
+                                                TonexBleClient.ConnectionState.RECONNECTING -> Color(0xFFFF9800)
+                                                TonexBleClient.ConnectionState.DISCONNECTED -> Color(0xFFC33030)
+                                            }
+                                            val stateText = when (connState) {
+                                                TonexBleClient.ConnectionState.CONNECTED -> LanguageManager.get(StringKey.CONNECTED, viewModel.appLanguage)
+                                                TonexBleClient.ConnectionState.CONNECTING -> LanguageManager.get(StringKey.CONNECTING, viewModel.appLanguage)
+                                                TonexBleClient.ConnectionState.RECONNECTING -> LanguageManager.get(StringKey.RECONNECTING, viewModel.appLanguage)
+                                                TonexBleClient.ConnectionState.DISCONNECTED -> LanguageManager.get(StringKey.DISCONNECTED, viewModel.appLanguage)
+                                            }
+
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(stateColor.copy(alpha = 0.15f))
+                                                    .border(1.dp, stateColor, RoundedCornerShape(6.dp))
+                                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                                            ) {
+                                                Box(modifier = Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(stateColor))
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(stateText, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = stateColor)
+                                            }
+                                            Spacer(modifier = Modifier.height(8.dp))
+
+                                            val isConnecting = connState == TonexBleClient.ConnectionState.CONNECTING || connState == TonexBleClient.ConnectionState.RECONNECTING
+                                            Button(
+                                                onClick = {
+                                                    keyboardController?.hide()
+                                                    if (isConnecting) {
+                                                        viewModel.disconnect()
+                                                    } else {
+                                                        viewModel.connect()
+                                                    }
+                                                },
+                                                modifier = Modifier.fillMaxWidth().height(36.dp),
+                                                contentPadding = PaddingValues(0.dp),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = if (isConnecting) Color(0xFFC33030) else Color(0xFFD1A60C),
+                                                    contentColor = if (isConnecting) Color.White else Color.Black
+                                                ),
+                                                shape = RoundedCornerShape(6.dp)
+                                            ) {
+                                                Text(LanguageManager.get(if (isConnecting) StringKey.CANCEL else StringKey.CONNECT, viewModel.appLanguage), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            }
+                                        } else {
+                                            // Connected to BLE
+                                            if (!tonexConnected) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.Center
+                                                ) {
+                                                    CircularProgressIndicator(color = Color(0xFFD1A60C), modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(
+                                                        text = if (viewModel.appLanguage == AppLanguage.ES) "Buscando Tonex..." else "Searching Tonex...",
+                                                        fontSize = 11.sp,
+                                                        color = Color.Gray
+                                                    )
+                                                }
+                                            } else {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.Center
+                                                ) {
+                                                    Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Success", tint = Color(0xFF39FF14), modifier = Modifier.size(20.dp))
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(
+                                                        text = if (viewModel.appLanguage == AppLanguage.ES) "¡Correcto! Iniciando..." else "Correct! Starting...",
+                                                        fontSize = 12.sp,
+                                                        color = Color(0xFF39FF14),
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.height(8.dp))
+
+                                            TextButton(
+                                                onClick = { viewModel.disconnect() },
+                                                modifier = Modifier.height(32.dp),
+                                                contentPadding = PaddingValues(0.dp)
+                                            ) {
+                                                Text(LanguageManager.get(StringKey.DISCONNECT, viewModel.appLanguage), fontSize = 12.sp, color = Color(0xFFC33030), fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        // Language Selector
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = if (viewModel.appLanguage == AppLanguage.EN) "Language" else "Idioma",
+                                                fontSize = 10.sp,
+                                                color = Color.LightGray,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                LanguageFlagButton(
+                                                    lang = AppLanguage.EN,
+                                                    isSelected = viewModel.appLanguage == AppLanguage.EN,
+                                                    onClick = { viewModel.setLanguage(AppLanguage.EN) }
+                                                )
+                                                LanguageFlagButton(
+                                                    lang = AppLanguage.ES,
+                                                    isSelected = viewModel.appLanguage == AppLanguage.ES,
+                                                    onClick = { viewModel.setLanguage(AppLanguage.ES) }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Portrait vertical layout (compacted)
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Tune,
+                                        contentDescription = "Logo",
+                                        tint = Color(0xFFD1A60C),
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "TONEX MOBILE",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFD1A60C)
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    // Status indicators
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(Color(0xFF121212), RoundedCornerShape(8.dp))
+                                            .border(1.dp, Color(0xFF2C2C2C), RoundedCornerShape(8.dp))
+                                            .padding(14.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        val bleText = if (viewModel.appLanguage == AppLanguage.ES) "Conexión con controlador: " else "Connection with controller: "
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(bleText, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                            Text(
+                                                text = if (isBleConnected) "SÍ" else "NO",
+                                                color = if (isBleConnected) Color(0xFF39FF14) else Color(0xFFFF3B30),
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.ExtraBold
+                                            )
+                                        }
+
+                                        val tonexText = if (viewModel.appLanguage == AppLanguage.ES) "Conexión con Tonex: " else "Connection with Tonex: "
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(tonexText, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                            Text(
+                                                text = if (tonexConnected) "SÍ" else "NO",
+                                                color = if (tonexConnected) Color(0xFF39FF14) else Color(0xFFFF3B30),
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.ExtraBold
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    if (!isBleConnected) {
+                                        Text(
+                                            text = LanguageManager.get(StringKey.CONNECT_HELP, viewModel.appLanguage),
+                                            fontSize = 11.sp,
+                                            color = Color.Gray,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        OutlinedTextField(
+                                            value = viewModel.hostIp,
+                                            onValueChange = { viewModel.updateHost(it) },
+                                            label = { Text(LanguageManager.get(StringKey.IP_ADDRESS, viewModel.appLanguage), fontSize = 9.sp) },
+                                            placeholder = { Text("TnxBT", color = Color.Gray) },
+                                            singleLine = true,
+                                            keyboardOptions = KeyboardOptions(
+                                                keyboardType = KeyboardType.Text,
+                                                imeAction = ImeAction.Done
+                                            ),
+                                            keyboardActions = KeyboardActions(onDone = {
+                                                keyboardController?.hide()
+                                                viewModel.connect()
+                                            }),
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp, color = Color.White),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedBorderColor = Color(0xFFD1A60C),
+                                                unfocusedBorderColor = Color.Gray,
+                                                focusedLabelColor = Color(0xFFD1A60C),
+                                                unfocusedLabelColor = Color.Gray
+                                            )
+                                        )
+
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        val stateColor = when (connState) {
+                                            TonexBleClient.ConnectionState.CONNECTED -> Color(0xFF2E7D32)
+                                            TonexBleClient.ConnectionState.CONNECTING -> Color(0xFFD1A60C)
+                                            TonexBleClient.ConnectionState.RECONNECTING -> Color(0xFFFF9800)
+                                            TonexBleClient.ConnectionState.DISCONNECTED -> Color(0xFFC33030)
+                                        }
+                                        val stateText = when (connState) {
+                                            TonexBleClient.ConnectionState.CONNECTED -> LanguageManager.get(StringKey.CONNECTED, viewModel.appLanguage)
+                                            TonexBleClient.ConnectionState.CONNECTING -> LanguageManager.get(StringKey.CONNECTING, viewModel.appLanguage)
+                                            TonexBleClient.ConnectionState.RECONNECTING -> LanguageManager.get(StringKey.RECONNECTING, viewModel.appLanguage)
+                                            TonexBleClient.ConnectionState.DISCONNECTED -> LanguageManager.get(StringKey.DISCONNECTED, viewModel.appLanguage)
+                                        }
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(stateColor.copy(alpha = 0.15f))
+                                                .border(1.dp, stateColor, RoundedCornerShape(8.dp))
+                                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                        ) {
+                                            Box(modifier = Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(stateColor))
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(stateText, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = stateColor)
+                                        }
+
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        Button(
+                                            onClick = {
+                                                keyboardController?.hide()
+                                                viewModel.connect()
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD1A60C), contentColor = Color.Black),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text(LanguageManager.get(StringKey.CONNECT, viewModel.appLanguage), fontWeight = FontWeight.Bold)
+                                        }
+                                    } else {
+                                        if (!tonexConnected) {
+                                            CircularProgressIndicator(color = Color(0xFFD1A60C), modifier = Modifier.size(36.dp))
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Text(
+                                                text = if (viewModel.appLanguage == AppLanguage.ES) "Esperando conexión USB con Tonex..." else "Waiting for USB connection with Tonex...",
+                                                fontSize = 12.sp,
+                                                color = Color.Gray,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        } else {
+                                            Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Success", tint = Color(0xFF39FF14), modifier = Modifier.size(48.dp))
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Text(
+                                                text = if (viewModel.appLanguage == AppLanguage.ES) "¡Conexiones correctas! Iniciando..." else "Connections correct! Starting...",
+                                                fontSize = 14.sp,
+                                                color = Color(0xFF39FF14),
+                                                fontWeight = FontWeight.Bold,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                        TextButton(onClick = { viewModel.disconnect() }) {
+                                            Text(LanguageManager.get(StringKey.DISCONNECT, viewModel.appLanguage), color = Color(0xFFC33030), fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = if (viewModel.appLanguage == AppLanguage.EN) "Language / Idioma" else "Idioma / Language",
+                                            fontSize = 11.sp,
+                                            color = Color.LightGray,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            LanguageFlagButton(
+                                                lang = AppLanguage.EN,
+                                                isSelected = viewModel.appLanguage == AppLanguage.EN,
+                                                onClick = { viewModel.setLanguage(AppLanguage.EN) }
+                                            )
+                                            LanguageFlagButton(
+                                                lang = AppLanguage.ES,
+                                                isSelected = viewModel.appLanguage == AppLanguage.ES,
+                                                onClick = { viewModel.setLanguage(AppLanguage.ES) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (!isEditorOpen) {
             // --- MAIN VIEW: Logo/Config + Waveshare Bezel + Bottom Chain (full screen) ---
-                val scaledBpm = (40 + (state.globals.bpm * (240 - 40) / 127))
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -780,16 +1125,16 @@ fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             val badgeColor = when (connState) {
-                                TonexWebSocketClient.ConnectionState.CONNECTED -> Color(0xFF2E7D32)
-                                TonexWebSocketClient.ConnectionState.CONNECTING -> Color(0xFFD1A60C)
-                                TonexWebSocketClient.ConnectionState.RECONNECTING -> Color(0xFFFF9800)
-                                TonexWebSocketClient.ConnectionState.DISCONNECTED -> Color(0xFFC33030)
+                                TonexBleClient.ConnectionState.CONNECTED -> Color(0xFF2E7D32)
+                                TonexBleClient.ConnectionState.CONNECTING -> Color(0xFFD1A60C)
+                                TonexBleClient.ConnectionState.RECONNECTING -> Color(0xFFFF9800)
+                                TonexBleClient.ConnectionState.DISCONNECTED -> Color(0xFFC33030)
                             }
                             val badgeText = when (connState) {
-                                TonexWebSocketClient.ConnectionState.CONNECTED -> LanguageManager.get(StringKey.CONNECTED, viewModel.appLanguage)
-                                TonexWebSocketClient.ConnectionState.CONNECTING -> LanguageManager.get(StringKey.CONNECTING, viewModel.appLanguage)
-                                TonexWebSocketClient.ConnectionState.RECONNECTING -> LanguageManager.get(StringKey.RECONNECTING, viewModel.appLanguage)
-                                TonexWebSocketClient.ConnectionState.DISCONNECTED -> LanguageManager.get(StringKey.DISCONNECTED, viewModel.appLanguage)
+                                TonexBleClient.ConnectionState.CONNECTED -> LanguageManager.get(StringKey.CONNECTED, viewModel.appLanguage)
+                                TonexBleClient.ConnectionState.CONNECTING -> LanguageManager.get(StringKey.CONNECTING, viewModel.appLanguage)
+                                TonexBleClient.ConnectionState.RECONNECTING -> LanguageManager.get(StringKey.RECONNECTING, viewModel.appLanguage)
+                                TonexBleClient.ConnectionState.DISCONNECTED -> LanguageManager.get(StringKey.DISCONNECTED, viewModel.appLanguage)
                             }
                             Box(
                                 modifier = Modifier
@@ -903,9 +1248,10 @@ fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
                                         value = viewModel.hostIp,
                                         onValueChange = { viewModel.updateHost(it) },
                                         label = { Text(LanguageManager.get(StringKey.IP_ADDRESS, viewModel.appLanguage), fontSize = 9.sp) },
+                                        placeholder = { Text("TnxBT", color = Color.Gray) },
                                         singleLine = true,
                                         keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Uri,
+                                            keyboardType = KeyboardType.Text,
                                             imeAction = ImeAction.Done
                                         ),
                                         keyboardActions = KeyboardActions(
@@ -988,29 +1334,12 @@ fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
                                 .fillMaxSize()
                                 .background(Color(0xFF16161A))
                         ) {
-                            // Central screen animations & colors declared first for top bar usage
-                            val beatDurationMs = (60000 / scaledBpm).toLong()
-                            val infiniteTransition = rememberInfiniteTransition(label = "beat")
-                            val beatProgress by infiniteTransition.animateFloat(
-                                initialValue = 0f,
-                                targetValue = 1f,
-                                animationSpec = infiniteRepeatable(
-                                    animation = tween(
-                                        durationMillis = (beatDurationMs / 2).toInt().coerceIn(100, 1000),
-                                        easing = LinearEasing
-                                    ),
-                                    repeatMode = RepeatMode.Reverse
-                                ),
-                                label = "beatProgress"
-                            )
-                            val beatPulseColor = lerp(Color(0xFF1A1A1E), Color(0xFF5A1A2A), beatProgress)
-                            val beatBorderColor = lerp(Color(0xFF2D2D35), Color(0xFFFF2E93), beatProgress)
 
                             val connectionIndicatorColor = when (connState) {
-                                TonexWebSocketClient.ConnectionState.CONNECTED -> Color(0xFF00E676)
-                                TonexWebSocketClient.ConnectionState.CONNECTING -> Color(0xFFD1A60C)
-                                TonexWebSocketClient.ConnectionState.RECONNECTING -> Color(0xFFFF9800)
-                                TonexWebSocketClient.ConnectionState.DISCONNECTED -> Color(0xFFC33030)
+                                TonexBleClient.ConnectionState.CONNECTED -> Color(0xFF00E676)
+                                TonexBleClient.ConnectionState.CONNECTING -> Color(0xFFD1A60C)
+                                TonexBleClient.ConnectionState.RECONNECTING -> Color(0xFFFF9800)
+                                TonexBleClient.ConnectionState.DISCONNECTED -> Color(0xFFC33030)
                             }
 
                             // Top panel bar (Redesigned with premium modern tech look)
@@ -1069,7 +1398,7 @@ fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
                                     )
                                 }
 
-                                // Right Section: Bank Badge & TAP BPM Button
+                                // Right Section: Bank Badge
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.End,
@@ -1089,34 +1418,6 @@ fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = FontFamily.Monospace,
                                             color = Color.LightGray
-                                        )
-                                    }
-                                    
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    
-                                    // TAP BPM Chip
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(beatPulseColor)
-                                            .border(1.dp, beatBorderColor, RoundedCornerShape(4.dp))
-                                            .clickable { onTapTempo() }
-                                            .padding(horizontal = 6.dp, vertical = 3.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(6.dp)
-                                                .clip(androidx.compose.foundation.shape.CircleShape)
-                                                .background(if (beatProgress > 0.5f) Color(0xFFFF2E93) else Color(0xFF5A1A2A))
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = "$scaledBpm BPM",
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Black,
-                                            fontFamily = FontFamily.Monospace,
-                                            color = if (beatProgress > 0.5f) Color(0xFFFF2E93) else Color.White
                                         )
                                     }
                                 }
@@ -1383,7 +1684,7 @@ fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
                         BlockType.CAB -> CabinetSliders(state, viewModel)
                         BlockType.EQ -> EqSliders(state, viewModel)
                         BlockType.MODULATION -> ModulationSliders(state, viewModel)
-                        BlockType.DELAY -> DelaySliders(state, viewModel)
+                        BlockType.DELAY -> DelaySliders(state, viewModel, onTapTempo, beatPulseColor, beatBorderColor, beatProgress)
                         BlockType.REVERB -> ReverbSliders(state, viewModel)
                         BlockType.GLOBALS -> GlobalSliders(state, viewModel)
                     }
@@ -1502,38 +1803,97 @@ fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
         if (showInfoDialog) {
             AlertDialog(
                 onDismissRequest = { showInfoDialog = false },
-                title = { Text(LanguageManager.get(StringKey.SKINS_INFO_TITLE, viewModel.appLanguage), fontWeight = FontWeight.Bold) },
+                title = { Text(LanguageManager.get(StringKey.INFO, viewModel.appLanguage), fontWeight = FontWeight.Bold) },
                 text = {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        Text(
-                            text = LanguageManager.get(StringKey.WHY_SKINS_MISMATCH_TITLE, viewModel.appLanguage),
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFD1A60C),
-                            fontSize = 13.sp
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = LanguageManager.get(StringKey.WHY_SKINS_MISMATCH_DESC, viewModel.appLanguage),
-                            fontSize = 11.sp,
-                            color = Color.LightGray
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = LanguageManager.get(StringKey.HOW_TO_CUSTOMIZE_TITLE, viewModel.appLanguage),
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF00E5FF),
-                            fontSize = 13.sp
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = LanguageManager.get(StringKey.HOW_TO_CUSTOMIZE_DESC, viewModel.appLanguage),
-                            fontSize = 11.sp,
-                            color = Color.LightGray
-                        )
+                    val scrollState = rememberScrollState()
+                    Box(modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(scrollState)
+                                .padding(bottom = 28.dp)
+                        ) {
+                            // 1. HOW TO SAVE PRESET CHANGES (FIRST!)
+                            Text(
+                                text = LanguageManager.get(StringKey.HOW_TO_SAVE_TITLE, viewModel.appLanguage),
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF39FF14), // Neon/Spring green
+                                fontSize = 13.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = LanguageManager.get(StringKey.HOW_TO_SAVE_DESC, viewModel.appLanguage),
+                                fontSize = 11.sp,
+                                color = Color.LightGray
+                            )
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            HorizontalDivider(color = Color(0xFF333333), thickness = 1.dp)
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // 2. WHY SKINS MISMATCH (Skins Info)
+                            Text(
+                                text = LanguageManager.get(StringKey.WHY_SKINS_MISMATCH_TITLE, viewModel.appLanguage),
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFD1A60C),
+                                fontSize = 13.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = LanguageManager.get(StringKey.WHY_SKINS_MISMATCH_DESC, viewModel.appLanguage),
+                                fontSize = 11.sp,
+                                color = Color.LightGray
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = LanguageManager.get(StringKey.HOW_TO_CUSTOMIZE_TITLE, viewModel.appLanguage),
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF00E5FF),
+                                fontSize = 13.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = LanguageManager.get(StringKey.HOW_TO_CUSTOMIZE_DESC, viewModel.appLanguage),
+                                fontSize = 11.sp,
+                                color = Color.LightGray
+                            )
+                        }
+
+                        // Fading bottom overlay hint if scrolling is available
+                        if (scrollState.value < scrollState.maxValue - 8) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .height(44.dp)
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colors = listOf(Color.Transparent, Color(0xFF1E1E1E).copy(alpha = 0.95f))
+                                        )
+                                    ),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(bottom = 2.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.KeyboardArrowDown,
+                                        contentDescription = "Scroll down",
+                                        tint = Color(0xFF39FF14).copy(alpha = 0.85f),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (viewModel.appLanguage == AppLanguage.ES) "Desliza para ver más" else "Scroll for more",
+                                        color = Color.LightGray,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
                     }
                 },
                 confirmButton = {
@@ -1899,13 +2259,76 @@ fun ModulationSliders(state: TonexState, viewModel: TonexViewModel) {
 }
 
 @Composable
-fun DelaySliders(state: TonexState, viewModel: TonexViewModel) {
+fun DelaySliders(
+    state: TonexState,
+    viewModel: TonexViewModel,
+    onTapTempo: () -> Unit,
+    beatPulseColor: Color,
+    beatBorderColor: Color,
+    beatProgress: Float
+) {
     val color = BlockType.DELAY.color
     val lang = viewModel.appLanguage
     val isTape = state.delay.type == DelayType.TAPE
+    val isSyncEnabled = state.delay.sync
+
     Column(modifier = Modifier.fillMaxWidth()) {
         TonexSwitchRow(LanguageManager.get(StringKey.DELAY_POWER, lang), state.delay.enabled, { viewModel.setCc(MidiCcMap.DELAY_POWER, if (it) 127 else 0) }, color)
         
+        TonexSwitchRow(
+            LanguageManager.get(StringKey.DELAY_SYNC, lang),
+            state.delay.sync,
+            { viewModel.setCc(if (isTape) MidiCcMap.TAPE_DELAY_SYNC else MidiCcMap.DIGITAL_DELAY_SYNC, if (it) 127 else 0) },
+            color
+        )
+
+        // TAP BPM Row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp)
+                .alpha(if (isSyncEnabled) 1f else 0.4f),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "TAP TEMPO",
+                color = Color.LightGray,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
+            
+            val scaledBpm = (40 + (state.globals.bpm * (240 - 40) / 127))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(if (isSyncEnabled) beatPulseColor else Color.DarkGray)
+                    .border(1.dp, if (isSyncEnabled) beatBorderColor else Color.Gray, RoundedCornerShape(6.dp))
+                    .clickable(enabled = isSyncEnabled) { onTapTempo() }
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(
+                            if (isSyncEnabled) {
+                                if (beatProgress > 0.5f) Color(0xFFFF2E93) else Color(0xFF5A1A2A)
+                            } else Color.Gray
+                        )
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "$scaledBpm BPM",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = FontFamily.Monospace,
+                    color = if (isSyncEnabled && beatProgress > 0.5f) Color(0xFFFF2E93) else Color.White
+                )
+            }
+        }
+
         TonexSlider(
             LanguageManager.get(StringKey.TIME, lang),
             state.delay.time,
