@@ -79,7 +79,11 @@ enum class StringKey {
     CAB_SIM_BYPASS_GLOBAL,
     INFO,
     DEVELOPED_BY_TEXT,
-    RESET_SKINS
+    RESET_SKINS,
+    EXIT_APP_TITLE,
+    EXIT_APP_CONFIRM,
+    YES,
+    NO
 }
 
 object LanguageManager {
@@ -152,7 +156,11 @@ object LanguageManager {
             StringKey.CAB_SIM_BYPASS_GLOBAL to "Cab Sim Bypass (Global)",
             StringKey.INFO to "INFO",
             StringKey.DEVELOPED_BY_TEXT to "Android application developed by Blackchorima and based on the Tonex One Controller project by Builty",
-            StringKey.RESET_SKINS to "RESET ALL SKINS"
+            StringKey.RESET_SKINS to "RESET ALL SKINS",
+            StringKey.EXIT_APP_TITLE to "Exit Application",
+            StringKey.EXIT_APP_CONFIRM to "Are you sure you want to close the application?",
+            StringKey.YES to "Yes",
+            StringKey.NO to "No"
         ),
         AppLanguage.ES to mapOf(
             StringKey.CONNECT to "CONECTAR",
@@ -222,7 +230,11 @@ object LanguageManager {
             StringKey.CAB_SIM_BYPASS_GLOBAL to "Bypass de Cab Sim (Global)",
             StringKey.INFO to "INFORMACIÓN",
             StringKey.DEVELOPED_BY_TEXT to "Aplicación Android desarrollada por Blackchorima y basada en el proyecto Tonex One Controller de Builty",
-            StringKey.RESET_SKINS to "RESTABLECER CARÁTULAS"
+            StringKey.RESET_SKINS to "RESTABLECER CARÁTULAS",
+            StringKey.EXIT_APP_TITLE to "Cerrar Aplicación",
+            StringKey.EXIT_APP_CONFIRM to "¿Estás seguro de que deseas cerrar la aplicación?",
+            StringKey.YES to "Sí",
+            StringKey.NO to "No"
         )
     )
 

@@ -108,7 +108,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    TonexControllerApp()
+                    TonexControllerApp(onCloseApp = { finish() })
                 }
             }
         }
@@ -561,10 +561,15 @@ fun TonexKnob(
 // ── Main UI Layout ──────────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
+fun TonexControllerApp(
+    viewModel: TonexViewModel = viewModel(),
+    onCloseApp: () -> Unit = {}
+) {
     val state by viewModel.tonexState.collectAsState()
     val connState by viewModel.connectionState.collectAsState()
     val tonexConnected by viewModel.tonexConnected.collectAsState()
+
+    var showExitConfirmation by remember { mutableStateOf(false) }
 
     var showPresetsAfterSync by remember { mutableStateOf(false) }
 
@@ -655,6 +660,23 @@ fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
             Box(modifier = Modifier.fillMaxSize()) {
                 val keyboardController = LocalSoftwareKeyboardController.current
                 if (!showPresetsAfterSync) {
+                    // Close button at top-right of connection screen (safe position, warning color)
+                    IconButton(
+                        onClick = { showExitConfirmation = true },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp)
+                            .size(36.dp)
+                            .background(Color(0xFF222222), RoundedCornerShape(8.dp))
+                            .border(BorderStroke(1.dp, Color(0xFFC33030).copy(alpha = 0.5f)), RoundedCornerShape(8.dp))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close Application",
+                            tint = Color(0xFFC33030),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                     val configuration = LocalConfiguration.current
                     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
                     val scrollState = rememberScrollState()
@@ -1223,6 +1245,18 @@ fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
                                     imageVector = if (configExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                                     contentDescription = "Config Toggle",
                                     tint = Color.Gray
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            IconButton(
+                                onClick = { showExitConfirmation = true },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Close Application",
+                                    tint = Color(0xFFC33030),
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
@@ -1899,6 +1933,33 @@ fun TonexControllerApp(viewModel: TonexViewModel = viewModel()) {
                 confirmButton = {
                     TextButton(onClick = { showInfoDialog = false }) {
                         Text(LanguageManager.get(StringKey.OK, viewModel.appLanguage))
+                    }
+                },
+                containerColor = Color(0xFF1E1E1E),
+                textContentColor = Color.White,
+                titleContentColor = Color.White
+            )
+        }
+
+        if (showExitConfirmation) {
+            AlertDialog(
+                onDismissRequest = { showExitConfirmation = false },
+                title = { Text(LanguageManager.get(StringKey.EXIT_APP_TITLE, viewModel.appLanguage), fontWeight = FontWeight.Bold) },
+                text = { Text(LanguageManager.get(StringKey.EXIT_APP_CONFIRM, viewModel.appLanguage)) },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showExitConfirmation = false
+                            onCloseApp()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                    ) {
+                        Text(LanguageManager.get(StringKey.YES, viewModel.appLanguage), color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showExitConfirmation = false }) {
+                        Text(LanguageManager.get(StringKey.NO, viewModel.appLanguage), color = Color.Gray, fontWeight = FontWeight.Bold)
                     }
                 },
                 containerColor = Color(0xFF1E1E1E),
